@@ -24,6 +24,7 @@ from unirl.rollout.engine.vllm_omni.utils import (
     seed_from_sample_id,
 )
 from unirl.rollout.engine.vllm_omni.utils.diff_kwargs import core_diff_kwargs, sde_extra_args
+from unirl.rollout.engine.vllm_omni.utils.sampling import seed_ar_calls
 from unirl.types.primitives import Texts
 from unirl.types.sample import Part, Sample
 from unirl.types.sampling import ARSamplingParams, DiffusionSamplingParams
@@ -104,7 +105,7 @@ def hi3_ar_fused_conditions(per_request: List[List[OmniRawResult]]) -> Dict[str,
 
 
 class Hi3InputAdapter:
-    """Request ``Sample`` → HI3 AR-bearing :class:`GenerateCall` (one, whole batch)."""
+    """Request ``Sample`` → HI3 AR-bearing calls, split by row when AR seeds or x_T recipes require it."""
 
     def __init__(
         self,
@@ -208,7 +209,9 @@ class Hi3InputAdapter:
             ),
         )
         if "dit" not in self.stages:
-            return [GenerateCall(prompts=prompts, sampling=[ar_sampling])]
+            return seed_ar_calls(
+                [GenerateCall(prompts=prompts, sampling=[ar_sampling])], ar_params.seed, ar_part.sample_ids
+            )
 
         seg = diff_part.segment
         if isinstance(seg, LatentSegment) and seg.initial_latents is not None:
@@ -235,12 +238,16 @@ class Hi3InputAdapter:
             diff_kwargs = dict(base_diff_kwargs)
             if base_extra:
                 diff_kwargs["extra_args"] = dict(base_extra)
-            return [
-                GenerateCall(
-                    prompts=prompts,
-                    sampling=[ar_sampling, StageSampling(kind=STAGE_KIND_DIFFUSION, kwargs=diff_kwargs)],
-                )
-            ]
+            return seed_ar_calls(
+                [
+                    GenerateCall(
+                        prompts=prompts,
+                        sampling=[ar_sampling, StageSampling(kind=STAGE_KIND_DIFFUSION, kwargs=diff_kwargs)],
+                    )
+                ],
+                ar_params.seed,
+                ar_part.sample_ids,
+            )
         if len(recipe_keys) != len(prompts):
             raise ValueError(
                 f"{self.modality}: x_T recipe key count {len(recipe_keys)} != prompt count {len(prompts)}."
@@ -261,7 +268,7 @@ class Hi3InputAdapter:
                     sampling=[ar_sampling, StageSampling(kind=STAGE_KIND_DIFFUSION, kwargs=diff_kwargs)],
                 )
             )
-        return calls
+        return seed_ar_calls(calls, ar_params.seed, ar_part.sample_ids)
 
 
 class Hi3TextOutputAdapter:
