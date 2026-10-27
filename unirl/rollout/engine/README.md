@@ -87,7 +87,9 @@ handler in `../../distributed/weight_sync`.
   engine-config fallback.
 - **Explicit vLLM-Omni AR seeds use one call per sample.** HI3 and Qwen3-Omni
   derive each request's seed from `ARSamplingParams.seed` and the AR Part's
-  `sample_id`, using the same `derive_sampling_seed` mapping as SGLang. In
+  `sample_id`, using the same `derive_sampling_seed` mapping as SGLang. HI3
+  diffusion children use their parent AR ID, so diffusion fan-out does not change
+  that AR sample's seed. In
   vLLM-Omni 0.28, each call shares one sampling-params object per stage across
   its prompts; splitting preserves per-sample seeds under reordering and
   sharding, but can reduce throughput because the native backend executes calls

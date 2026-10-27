@@ -198,6 +198,7 @@ class Hi3InputAdapter:
             prompts.append(entry)
 
         ar_params = ar_part.sampling_params
+        sample_ids = diff_part.group_ids if "dit" in self.stages and ar_params.seed is not None else ar_part.sample_ids
         ar_sampling = StageSampling(
             kind=STAGE_KIND_AR,
             kwargs=dict(
@@ -209,9 +210,7 @@ class Hi3InputAdapter:
             ),
         )
         if "dit" not in self.stages:
-            return seed_ar_calls(
-                [GenerateCall(prompts=prompts, sampling=[ar_sampling])], ar_params.seed, ar_part.sample_ids
-            )
+            return seed_ar_calls([GenerateCall(prompts=prompts, sampling=[ar_sampling])], ar_params.seed, sample_ids)
 
         seg = diff_part.segment
         if isinstance(seg, LatentSegment) and seg.initial_latents is not None:
@@ -246,7 +245,7 @@ class Hi3InputAdapter:
                     )
                 ],
                 ar_params.seed,
-                ar_part.sample_ids,
+                sample_ids,
             )
         if len(recipe_keys) != len(prompts):
             raise ValueError(
@@ -268,7 +267,7 @@ class Hi3InputAdapter:
                     sampling=[ar_sampling, StageSampling(kind=STAGE_KIND_DIFFUSION, kwargs=diff_kwargs)],
                 )
             )
-        return seed_ar_calls(calls, ar_params.seed, ar_part.sample_ids)
+        return seed_ar_calls(calls, ar_params.seed, sample_ids)
 
 
 class Hi3TextOutputAdapter:
