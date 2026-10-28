@@ -17,8 +17,7 @@ from unirl.rollout.engine.vllm_omni.backends import (
     OmniRawResult,
     StageSampling,
 )
-from unirl.rollout.engine.vllm_omni.utils import build_ar_segment, decoded_text_from_ar
-from unirl.rollout.engine.vllm_omni.utils.sampling import seed_ar_calls
+from unirl.rollout.engine.vllm_omni.utils import build_ar_segment, decoded_text_from_ar, seed_ar_calls
 from unirl.types.conditions import TextTokenCondition
 from unirl.types.sample import Sample
 from unirl.types.sampling import ARSamplingParams

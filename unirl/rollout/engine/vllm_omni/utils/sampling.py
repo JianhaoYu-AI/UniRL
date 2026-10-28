@@ -24,3 +24,6 @@ def seed_ar_calls(calls: List[GenerateCall], seed: Optional[int], sample_ids: Li
         ]
         seeded_calls.append(replace(call, prompts=[prompt], sampling=sampling))
     return seeded_calls
+
+
+__all__ = ["seed_ar_calls"]
